@@ -1,0 +1,16 @@
+.{
+    .name = .nxp_125khz_reader_writer,
+    .version = "0.0.1",
+    .fingerprint = 0xfa9951acf17e7075,
+    .minimum_zig_version = "0.15.1",
+    .dependencies = .{
+        .microzig = .{
+            .url = "git+https://github.com/ZigEmbeddedGroup/microzig.git#eb427a13fd23dfe8200749118798312faa3bbe13",
+            .hash = "microzig-0.15.0-D20YSXqp2gAXLNVmFDPn4kYD7ohOKyxrcF1KDdchF3rN",
+        },
+    },
+    .paths = .{
+        "build.zig.zon",
+        "src",
+    },
+}

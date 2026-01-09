@@ -20,12 +20,12 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("examples/example1.zig"),
     });
 
-    const zigmkay_mod = b.addModule("nxp_125khz_reader_writer", .{
+    const nxp_mod = b.addModule("nxp_125khz_reader_writer", .{
         .root_source_file = .{
             .src_path = .{ .owner = b, .sub_path = "src/root.zig" },
         },
     });
-    firmware.add_app_import("nxp_125khz_reader_writer", zigmkay_mod, .{ .depend_on_microzig = true });
+    firmware.add_app_import("nxp_125khz_reader_writer", nxp_mod, .{ .depend_on_microzig = true });
 
     mb.install_firmware(firmware, .{ });
     mb.install_firmware(firmware, .{ .format = .elf });

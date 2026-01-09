@@ -1,10 +1,3 @@
-This project involves direct interaction with hardware, RF circuits, and voltage-sensitive components. The author takes no responsibility for any damaged or destroyed ICs, MCUs, RFID tags, or other hardware. Any PCB design errors, antenna tuning issues, incorrect voltage levels, missing level shifters, wiring mistakes, data loss, or unintended behavior remain entirely the responsibility of the user.
-
-The source code, documentation, and hardware guidance are provided **AS IS**, without any warranty of any kind, either express or implied. There is no guarantee of correctness, fitness for a particular purpose, or safe operation.
-
-By using this project, you acknowledge that you are solely responsible for verifying electrical compatibility, ensuring correct voltage levels, and following all applicable datasheets and hardware design best practices. If you are not confident in RF design, analog electronics, or MCU I/O voltage constraints, you should not connect this project to real hardware.
-
-
 # RP2350/RP2040 HITAG/RFID API
 
 This API is intended to work primarily with **RP2350** (tested), and **RP2040** (untested).

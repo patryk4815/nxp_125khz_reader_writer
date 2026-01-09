@@ -1,5 +1,7 @@
 # RP2350/RP2040 HITAG/RFID API
 
+**USE AT YOUR OWN RISK**
+
 This API is intended to work primarily with **RP2350** (tested), and **RP2040** (untested).
 
 It provides an interface for working with **RFID/HITAG read/write tags operating at 125 kHz**.

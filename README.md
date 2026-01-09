@@ -2,7 +2,7 @@
 
 This API is intended to work primarily with **RP2350** (tested), and **RP2040** (untested).
 
-It provides an interface for working with HITAG and RFID chips, supporting both reading and writing operations.
+It provides an interface for working with **RFID/HITAG read/write tags operating at 125 kHz**.
 
 ## Supported Chips
 

@@ -35,5 +35,5 @@ TBA. See the `./examples/` directory for working examples.
 - Supports multiple NXP chips
 
 
-# Tags for SEO: 
+## 
 RFID 125khz HITAG READER WRITER NXP PCF7991 NXP HTRC110 RP2350 RP2040 microzig

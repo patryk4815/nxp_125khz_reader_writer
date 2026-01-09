@@ -24,6 +24,8 @@ Example schematics:
 - https://github.com/kivijakola/hitager/wiki/Building-your-own-hitager-hardware
 
 ## Caveat
+- 🚨🚨🚨 **HTRC110 / PCF7991 I/O operates at 5 V⚠️**, while **RP2350/RP2040 GPIOs are 3.3 V⚠️ only**.  
+  A proper **level shifter** should be used to avoid damaging the MCU and to ensure reliable communication.
 
 - Currently, only a **4 MHz XTAL** is supported due to a hardcoded value in the source code:  
   https://github.com/patryk4815/nxp_125khz_reader_writer/blob/main/src/root.zig#L423

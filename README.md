@@ -23,11 +23,15 @@ Example schematics:
 - https://github.com/ibexuk/C_RFID_125khz_Readers_HTRC110/blob/master/Schematics/htrc110_rfid_reader_driver_example_project_circuit.pdf
 - https://github.com/kivijakola/hitager/wiki/Building-your-own-hitager-hardware
 
-## Requirements
+## Caveat
 
-This library requires:
+- Currently, only a **4 MHz XTAL** is supported due to a hardcoded value in the source code:  
+  https://github.com/patryk4815/nxp_125khz_reader_writer/blob/main/src/root.zig#L423
 
-- [microzig](https://pypi.org/project/microzig/) version **0.15.0**
+- When designing your own PCB, special care must be taken when building the **antenna circuit**.  
+  The capacitors and resistors must be properly selected and tuned to generate a **clean sinusoidal waveform at 125 kHz**, otherwise tag communication may be unreliable or fail completely.
+![wave-length.png](imgs/wave-length.png)
+
 
 ## Installation / Usage
 

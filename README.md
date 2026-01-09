@@ -18,6 +18,11 @@ The chip API is implemented based on publicly available documentation:
 - Old docs: ["Read/Write Devices based on the HITAG Read/Write IC HTRC110" (Sep 1998)](https://www.ic72.com/pdf_file/9/155194.pdf)
 - Latest docs: ["Read/write devices based on the HITAG read/write IC HTRC110" (Mar 2010)](https://www.nxp.com/docs/en/application-note/AN98080.pdf)
 
+## Build your own PCB :)
+Example schematics:
+- https://github.com/ibexuk/C_RFID_125khz_Readers_HTRC110/blob/master/Schematics/htrc110_rfid_reader_driver_example_project_circuit.pdf
+- https://github.com/kivijakola/hitager/wiki/Building-your-own-hitager-hardware
+
 ## Requirements
 
 This library requires:

@@ -375,10 +375,10 @@ pub const ChipHelper = struct {
     }
 
     pub fn INIT_PINS(self: @This()) void {
+        sampler.init(self.chip_raw.DIN, self.chip_raw.DOUT);
         time.sleep_ms(100);
         self.chip_raw.initPins();
         time.sleep_ms(100);
-        sampler.init(self.chip_raw.DIN, self.chip_raw.DOUT);
     }
 
     pub fn SET_IDLE_ANTENA(self: @This()) void {

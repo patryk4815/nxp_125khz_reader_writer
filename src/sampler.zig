@@ -43,19 +43,27 @@ const ask_tx = blk: {
 const pio_tx = rp2xxx.pio.num(0);
 const pio_rx = rp2xxx.pio.num(1);
 
-pub fn init(DIN: gpio.Pin, DOUT: gpio.Pin) void {
-    init_rx(DOUT);
-    init_tx(DIN);
+var pin_tx: gpio.Pin = gpio.num(0);
+var pin_rx: gpio.Pin = gpio.num(0);
+
+pub fn initPIO() void {
+    init_rx();
+    init_tx();
 }
 
-fn init_rx(pin: gpio.Pin) void {
+pub fn setPins(DIN: gpio.Pin, DOUT: gpio.Pin) void {
+    pin_rx = DOUT;
+    pin_tx = DIN;
+}
+
+fn init_rx() void {
     const sm: StateMachine = .sm0;
     const freq: f32 = @floatFromInt(rp2xxx.clock_config.sys.?.frequency());
     const div = freq / (125_000.0 * 2.0);  // aktualnie 2cycles = 1bit = 8us
 
-    pio_rx.sm_set_pindir(sm, to_pio_pin_num(pin), 1, .in);
+    pio_rx.sm_set_pindir(sm, to_pio_pin_num(pin_rx), 1, .in);
     // jak tego nie ustamy, to przy wlaczniu PIO, ten pin bedzie floating i bedzie mial dziwny voltage
-    pio_rx.sm_set_pin(sm, to_pio_pin_num(pin), 1, 1); // default high
+    pio_rx.sm_set_pin(sm, to_pio_pin_num(pin_rx), 1, 1); // default high
 
     pio_rx.sm_load_and_start_program(sm, any_rx, .{
         .clkdiv = rp2xxx.pio.ClkDivOptions.from_float(div),
@@ -66,9 +74,9 @@ fn init_rx(pin: gpio.Pin) void {
             .push_threshold = 0,  // 0 means full 32-bits
         },
         .pin_mappings = .{
-            .in_base = to_pio_pin_num(pin),
+            .in_base = to_pio_pin_num(pin_rx),
             .set = .{
-                .base = to_pio_pin_num(pin),
+                .base = to_pio_pin_num(pin_rx),
                 .count = 1,
             },
         },
@@ -96,13 +104,13 @@ fn start_rx() void {
     });
 }
 
-fn init_tx(pin: gpio.Pin) void {
+fn init_tx() void {
     const sm: StateMachine = .sm1;
     const freq: f32 = @floatFromInt(rp2xxx.clock_config.sys.?.frequency());
     const div = freq / (125_000.0 * 3.0);  // aktualnie 3cycles = 1bit = 8us
 
-    pio_tx.sm_set_pindir(sm, to_pio_pin_num(pin), 1, .out);
-    pio_tx.sm_set_pin(sm, to_pio_pin_num(pin), 1, 0);
+    pio_tx.sm_set_pindir(sm, to_pio_pin_num(pin_tx), 1, .out);
+    pio_tx.sm_set_pin(sm, to_pio_pin_num(pin_tx), 1, 0);
 
     pio_tx.sm_load_and_start_program(sm, ask_tx, .{
         .clkdiv = rp2xxx.pio.ClkDivOptions.from_float(div),
@@ -115,7 +123,7 @@ fn init_tx(pin: gpio.Pin) void {
         },
         .pin_mappings = .{
             .out = .{
-                .base = to_pio_pin_num(pin),
+                .base = to_pio_pin_num(pin_tx),
                 .count = 1,
             },
         },
@@ -143,7 +151,7 @@ fn start_tx() void {
     });
 }
 
-pub fn read_data(pin: gpio.Pin, buf: []u1) void {
+pub fn read_data(buf: []u1) void {
     // TODO: to moze dzialac na DMA kiedys
 
     if (buf.len < 1) {
@@ -151,13 +159,13 @@ pub fn read_data(pin: gpio.Pin, buf: []u1) void {
     }
 
     const sm: StateMachine = .sm0;
-    const old_value1 = pin.get_pads_reg().read();
-    const old_value2 = pin.get_regs().ctrl.read();
-    defer pin.get_pads_reg().write(old_value1);
-    defer pin.get_regs().ctrl.write(old_value2);
+    const old_value1 = pin_rx.get_pads_reg().read();
+    const old_value2 = pin_rx.get_regs().ctrl.read();
+    defer pin_rx.get_pads_reg().write(old_value1);
+    defer pin_rx.get_regs().ctrl.write(old_value2);
 
     start_rx();
-    pio_rx.gpio_init(pin);
+    pio_rx.gpio_init(pin_rx);
     pio_rx.sm_set_enabled(sm, true);
     defer pio_rx.sm_set_enabled(sm, false);
 
@@ -177,7 +185,7 @@ pub fn read_data(pin: gpio.Pin, buf: []u1) void {
     }
 }
 
-pub fn write_data(pin: gpio.Pin, buf: []const u1) void {
+pub fn write_data(buf: []const u1) void {
     // TODO: to moze dzialac na DMA kiedys
 
     if (buf.len < 1) {
@@ -185,13 +193,13 @@ pub fn write_data(pin: gpio.Pin, buf: []const u1) void {
     }
 
     const sm: StateMachine = .sm1;
-    const old_value1 = pin.get_pads_reg().read();
-    const old_value2 = pin.get_regs().ctrl.read();
-    defer pin.get_pads_reg().write(old_value1);
-    defer pin.get_regs().ctrl.write(old_value2);
+    const old_value1 = pin_tx.get_pads_reg().read();
+    const old_value2 = pin_tx.get_regs().ctrl.read();
+    defer pin_tx.get_pads_reg().write(old_value1);
+    defer pin_tx.get_regs().ctrl.write(old_value2);
 
     start_tx();
-    pio_tx.gpio_init(pin);
+    pio_tx.gpio_init(pin_tx);
     pio_tx.sm_set_enabled(sm, true);
     defer pio_tx.sm_set_enabled(sm, false);
 

@@ -7,7 +7,6 @@ const MicroBuild = microzig.MicroBuild(.{
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
     _ = target;
 
     const mz_dep = b.dependency("microzig", .{});
@@ -16,7 +15,7 @@ pub fn build(b: *std.Build) void {
     const firmware = mb.add_firmware(.{
         .name = "example1",
         .target = mb.ports.rp2xxx.boards.raspberrypi.pico2_arm,
-        .optimize = optimize,
+        .optimize = .ReleaseSmall,
         .root_source_file = b.path("examples/example1.zig"),
     });
 

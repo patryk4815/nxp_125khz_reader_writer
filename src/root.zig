@@ -1,6 +1,7 @@
 const std = @import("std");
 const microzig = @import("microzig");
 const sampler = @import("sampler.zig");
+const builtin = @import("builtin");
 
 const rp2xxx = microzig.hal;
 const gpio = rp2xxx.gpio;
@@ -155,7 +156,7 @@ pub fn bitDelay() void {
     // Delay to create serial interface bit time.
     // Requirement is not specified in the HTRC110 datasheet but >= 1uS is a
     // reliable value to use (Nop(); is a single cycle null instruction for the Microchip C18 compiler)
-    time.sleep_us(2);
+    time.sleep_us(1);
 }
 
 pub const ChipRaw = struct {
@@ -165,7 +166,7 @@ pub const ChipRaw = struct {
 
     // This command is used to read back the sampling time ts set with SET_SAMPLING_TIME.
     // The sampling time is coded binary in D5 to D0.
-    pub fn GET_SAMPLING_TIME(self: ChipRaw) u6 {
+    pub fn GET_SAMPLING_TIME(self: @This()) u6 {
         const cmd: u8 = 0b00000010;
         const out = self.send_data(u8, cmd, true);
         return @truncate(out);
@@ -179,7 +180,7 @@ pub const ChipRaw = struct {
     // D0) contains the contents of the selected configuration page in its lower nibble. For P = 0
     // or P = 1 the higher nibble reflects the current setting of N (the transmit pulse width). For
     // P = 2 or P = 3 the system status information is returned in the higher nibble.
-    pub fn GET_CONFIG_PAGE(self: ChipRaw, comptime T: type) T {
+    pub fn GET_CONFIG_PAGE(self: @This(), comptime T: type) T {
         var page: u2 = 0;
         switch (T) {
             ConfigPage0 => page = 0,
@@ -198,7 +199,7 @@ pub const ChipRaw = struct {
     // This command is used to set the amplifier and filter parameters (cutoff frequencies, gain
     // factors) and the different operation modes. P1 and P0 select one of four configuration
     // pages.
-    pub fn SET_CONFIG_PAGE(self: ChipRaw, comptime T: type, data: T) void {
+    pub fn SET_CONFIG_PAGE(self: @This(), comptime T: type, data: T) void {
         var page: u2 = 0;
         switch (T) {
             ConfigPage0 => page = 0,
@@ -216,7 +217,7 @@ pub const ChipRaw = struct {
 
     // This command specifies the demodulator sampling time ts. The sampling time is coded
     // binary in D5 to D0.
-    pub fn SET_SAMPLING_TIME(self: ChipRaw, times: u6) void {
+    pub fn SET_SAMPLING_TIME(self: @This(), times: u6) void {
         var cmd: u8 = 0b10000000;
         cmd |= times;
         _ = self.send_data(u8, cmd, false);
@@ -224,7 +225,7 @@ pub const ChipRaw = struct {
 
     // This command is used to read the antenna´s phase, which is measured at every carrier
     // cycle. The phase is coded binary in D5 to D0.
-    pub fn READ_PHASE(self: ChipRaw) u6 {
+    pub fn READ_PHASE(self: @This()) u6 {
         const cmd: u8 = 0b00001000;
         return @truncate(self.send_data(u8, cmd, true));
     }
@@ -234,7 +235,7 @@ pub const ChipRaw = struct {
     // READ_TAG-mode and transmits the demodulated, filtered and digitized data from the
     // transponder. Data comes out and should be decoded by the microcontroller.
     // READ_TAG-mode is terminated by a low to high transition at SCLK.
-    pub fn READ_TAG(self: ChipRaw) void {
+    pub fn READ_TAG(self: @This()) void {
         const cmd: u3 = 0b111;
         _ = self.send_data(u3, cmd, false);
     }
@@ -248,7 +249,7 @@ pub const ChipRaw = struct {
     // (T0 = 8 μs). This method relaxes the timing resolution requirements to the microcontroller
     // and to the software implementation while providing exact, selectable write pulse timing.
     // WRITE_TAG-mode is terminated immediately by a low to high transition at SCLK.
-    pub fn WRITE_TAG_N(self: ChipRaw, timeout: u4) void {
+    pub fn WRITE_TAG_N(self: @This(), timeout: u4) void {
         var cmd: u8 = 0b00010000;
         cmd |= timeout;
         _ = self.send_data(u8, cmd, false);
@@ -263,7 +264,7 @@ pub const ChipRaw = struct {
     // programmed with the most recent WRITE_TAG_N command, is used. If no
     // WRITE_TAG_N was issued so far, a default N = 0 (transparent mode) will be
     // assumed.
-    pub fn WRITE_TAG(self: ChipRaw) void {
+    pub fn WRITE_TAG(self: @This()) void {
         // TODO:
         // For optimizing the WRITE-pulse positions (see section 10.2) the delay times
         // of 310 µs for FILTERL=0
@@ -272,7 +273,7 @@ pub const ChipRaw = struct {
         _ = self.send_data(u3, cmd, false);
     }
 
-    pub fn initPins(self: ChipRaw) void {
+    pub fn initPins(self: @This()) void {
         self.SCLK.set_direction(.out);
         self.SCLK.set_function(.sio);
         self.SCLK.set_pull(.down);
@@ -287,16 +288,16 @@ pub const ChipRaw = struct {
         self.DOUT.set_function(.sio);
     }
 
-    // duration: ~2us
-    pub fn terminate_mode(self: ChipRaw) void {
+    // duration: MIN: 1us, TYP: ~2us
+    pub fn terminate_mode(self: @This()) void {
         self.SCLK.put(1);
         bitDelay();
         self.SCLK.put(0);
     }
 
-    // duration: ~40us if get_response=false
-    // duration: ~72us if get_response=true
-    fn send_data(self: ChipRaw, comptime T: type, tx_data: T, get_response: bool) u8 {
+    // duration: MIN: 20us, TYP:~28us, MAX: ??, if get_response=false + .ReleaseSmall
+    // duration: MIN: 36us, TYP:~52us, MAX: ??, if get_response=true + .ReleaseSmall
+    fn send_data(self: @This(), comptime T: type, tx_data: T, get_response: bool) u8 {
         var rx_data: u8 = 0;
 
         // --- Inicjalizacja interfejsu ---
@@ -363,19 +364,21 @@ pub const ChipHelper = struct {
     chip_raw: ChipRaw,
 
     pub fn init(DIN: u9, DOUT: u9, SCLK: u9) ChipHelper {
+        sampler.setPins(gpio.num(DIN), gpio.num(DOUT));
+
         const c = ChipRaw{
             .DIN = gpio.num(DIN),
             .DOUT = gpio.num(DOUT),
             .SCLK = gpio.num(SCLK),
         };
-
         return ChipHelper{
             .chip_raw = c,
         };
     }
 
     pub fn INIT_PINS(self: @This()) void {
-        sampler.init(self.chip_raw.DIN, self.chip_raw.DOUT);
+        sampler.initPIO();
+
         time.sleep_ms(100);
         self.chip_raw.initPins();
         time.sleep_ms(100);
@@ -479,14 +482,20 @@ pub const ChipHelper = struct {
         }
     }
 
-    // duration: ~350us until read will start
+    // duration: MIN: 50us, TYP: 68us, MAX: ??, until read will start
     pub fn READ(self: @This(), buf: []u1) void {
         self.chip_raw.SET_CONFIG_PAGE(ConfigPage2, .{
             .THRESET = 1,
             .FREEZE0 = 1,
             .FREEZE1 = 1,
         });
-        const timeTransferUs = 40;  // time how slow is SET_CONFIG_PAGE
+
+        // time how slow is SET_CONFIG_PAGE
+        const timeTransferUs = switch (builtin.mode) {
+            .ReleaseSmall => 20,
+            .ReleaseFast => 20,
+            else => @compileError("SET_CONFIG_PAGE will be probably too slow in this mode... use ReleaseSmall or ReleaseFast"),
+        };
         time.sleep_us(250 - timeTransferUs);
 
         self.chip_raw.SET_CONFIG_PAGE(ConfigPage2, .{
@@ -496,11 +505,11 @@ pub const ChipHelper = struct {
         });
 
         self.chip_raw.READ_TAG();
-        sampler.read_data(self.chip_raw.DOUT, buf);
+        sampler.read_data(buf);
         self.chip_raw.terminate_mode();
     }
 
-    // duration: ~60us until write will start
+    // duration: MIN: 30us, TYP: 40us, MAX: ??, until write will start
     pub fn WRITE(self: @This(), buf: []const u1) void {
         self.chip_raw.SET_CONFIG_PAGE(ConfigPage2, .{
             .THRESET = 1,
@@ -509,7 +518,7 @@ pub const ChipHelper = struct {
         });
 
         self.chip_raw.WRITE_TAG();
-        sampler.write_data(self.chip_raw.DIN, buf);
+        sampler.write_data(buf);
         self.chip_raw.terminate_mode();
     }
 };
